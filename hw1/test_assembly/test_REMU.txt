@@ -1,1 +1,12 @@
 ## RV32 Emulator Testing Assembly Code for REMU function
+
+main:
+addi   x27, x0, 23
+addi   x28, x0, 5
+remu   x29, x27, x28
+
+addi   x27, x0, -23
+remu   x30, x27, x28
+
+remu   x31, x27, x0
+hcf
