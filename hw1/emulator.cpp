@@ -795,7 +795,7 @@ void execute(uint8_t* mem, instr* imem, label_loc* labels, int label_count, bool
 				// get remainder
 				else
 				{
-					rf[i.a1.reg] = rf[i.a2.reg] % rf[i.a3.reg];
+					rf[i.a1.reg] = (int32_t)rf[i.a2.reg] % (int32_t)rf[i.a3.reg];
 				}
 				break;
 			case REMU:
