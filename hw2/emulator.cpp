@@ -825,12 +825,16 @@ void execute(uint8_t* mem, instr* imem, label_loc* labels, int label_count, bool
 			//instruction added
       		//case MUL: rf[i.a1.reg] = rf[i.a2.reg] * rf[i.a3.reg]; break;
 			case ANDN:
+				// X(rd) = X(rs1) & ~X(rs2)
 				rf[i.a1.reg] = rf[i.a2.reg] & ~rf[i.a3.reg];
 				break;
 			case CLMUL:
+				// output : xlenbits = 0
 				rf[i.a1.reg] = 0;
+				// foreach (i from 0 to (xlen - 1) by 1)
 				for (int j = 0; j < 32; j++)
 				{
+					// if ((rs2_val >> i) & 1) then output = output ^ (rs1_val << i)
 					if ((rf[i.a3.reg] >> j) & 1)
 					{
 						rf[i.a1.reg] = rf[i.a1.reg] ^ (rf[i.a2.reg] << j);
@@ -838,9 +842,12 @@ void execute(uint8_t* mem, instr* imem, label_loc* labels, int label_count, bool
 				}
 				break;
 			case CLMULH:
+				// output : xlenbits = 0
 				rf[i.a1.reg] = 0;
+				// foreach (i from 1 to xlen by 1)
 				for (int j = 1; j <= 32; j++)
 				{
+					// if ((rs2_val >> i) & 1) then output = output ^ (rs1_val >> (xlen - i))
 					if ((rf[i.a3.reg] >> j) & 1)
 					{
 						rf[i.a1.reg] = rf[i.a1.reg] ^ (rf[i.a2.reg] >> (32 - j));
@@ -848,9 +855,12 @@ void execute(uint8_t* mem, instr* imem, label_loc* labels, int label_count, bool
 				}
 				break;
 			case CLMULR:
+				// output : xlenbits = 0
 				rf[i.a1.reg] = 0;
+				// foreach (i from 0 to (xlen - 1) by 1)
 				for (int j = 0; j < 32; j++)
 				{
+					// if ((rs2_val >> i) & 1) then output = output ^ (rs1_val >> (xlen - i - 1))
 					if ((rf[i.a3.reg] >> j) & 1)
 					{
 						rf[i.a1.reg] = rf[i.a1.reg] ^ (rf[i.a2.reg] >> (32 - j - 1));
@@ -858,9 +868,12 @@ void execute(uint8_t* mem, instr* imem, label_loc* labels, int label_count, bool
 				}
 				break;
 			case CLZ:
+				// output : xlenbits = 0
 				rf[i.a1.reg] = 0;
+				// count from MSB
 				for (int j = 31; j >= 0; j--)
 				{
+					// check if bit set 1
 					if ((rf[i.a2.reg] >> j) & 1)
 					{
 						break;
@@ -872,9 +885,12 @@ void execute(uint8_t* mem, instr* imem, label_loc* labels, int label_count, bool
 				}
 				break;
 			case CPOP:
+				// output : xlenbits = 0
 				rf[i.a1.reg] = 0;
+				// loop through all bit
 				for (int j = 0; j < 32; j++)
 				{
+					// check each bit
 					if ((rf[i.a2.reg] >> j) & 1)
 					{
 						rf[i.a1.reg]++;
@@ -882,9 +898,12 @@ void execute(uint8_t* mem, instr* imem, label_loc* labels, int label_count, bool
 				}
 				break;
 			case CTZ:
+				// output : xlenbits = 0
 				rf[i.a1.reg] = 0;
+				// count from LSB
 				for (int j = 0; j < 32; j++)
 				{
+					// check if bit set 1
 					if ((rf[i.a2.reg] >> j) & 1)
 					{
 						break;
@@ -896,6 +915,7 @@ void execute(uint8_t* mem, instr* imem, label_loc* labels, int label_count, bool
 				}
 				break;
 			case MAX:
+				// compare 2 signed integers, return bigger one
 				if ((int32_t)rf[i.a2.reg] > (int32_t)rf[i.a3.reg])
 				{
 					rf[i.a1.reg] = rf[i.a2.reg];
@@ -906,6 +926,7 @@ void execute(uint8_t* mem, instr* imem, label_loc* labels, int label_count, bool
 				}
 				break;
 			case MAXU:
+				// compare 2 unsigned integers, return bigger one
 				if ((uint32_t)rf[i.a2.reg] > (uint32_t)rf[i.a3.reg])
 				{
 					rf[i.a1.reg] = rf[i.a2.reg];
@@ -916,6 +937,7 @@ void execute(uint8_t* mem, instr* imem, label_loc* labels, int label_count, bool
 				}
 				break;
 			case MIN:
+				// compare 2 signed integers, return smaller one
 				if ((int32_t)rf[i.a2.reg] < (int32_t)rf[i.a3.reg])
 				{
 					rf[i.a1.reg] = rf[i.a2.reg];
@@ -926,6 +948,7 @@ void execute(uint8_t* mem, instr* imem, label_loc* labels, int label_count, bool
 				}
 				break;
 			case MINU:
+				// compare 2 unsigned integers, return smaller one
 				if ((uint32_t)rf[i.a2.reg] < (uint32_t)rf[i.a3.reg])
 				{
 					rf[i.a1.reg] = rf[i.a2.reg];
@@ -936,10 +959,13 @@ void execute(uint8_t* mem, instr* imem, label_loc* labels, int label_count, bool
 				}
 				break;
 			case ORC_B:
+				// output : xlenbits = 0
 				rf[i.a1.reg] = 0;
+				// loop each byte
 				for (int j = 24; j >= 0; j -= 8)
 				{
 					rf[i.a1.reg] = rf[i.a1.reg] << 8;
+					// check each byte
 					if ((rf[i.a2.reg] >> j) & 0xff)
 					{
 						rf[i.a1.reg] = rf[i.a1.reg] | 0xff;
@@ -947,12 +973,16 @@ void execute(uint8_t* mem, instr* imem, label_loc* labels, int label_count, bool
 				}
 				break;
 			case ORN:
+				// X(rd) = X(rs1) | ~X(rs2)
 				rf[i.a1.reg] = rf[i.a2.reg] | ~rf[i.a3.reg];
 				break;
 			case REV8:
+				// output : xlenbits = 0
 				rf[i.a1.reg] = 0;
+				// loop each byte
 				for (int j = 24; j >= 0; j -= 8)
 				{
+					// loop each bit in byte
 					for (int k = 0; k < 8; k++)
 					{
 						rf[i.a1.reg] = rf[i.a1.reg] << 1;
@@ -961,9 +991,13 @@ void execute(uint8_t* mem, instr* imem, label_loc* labels, int label_count, bool
 				}
 				break;
 			case ROL:
+				// shamt = rf[i.a3.reg] & 0x1f
+				// (X(rs1) << shamt) | (X(rs1) >> (xlen - shamt))
 				rf[i.a1.reg] = (rf[i.a2.reg] << (rf[i.a3.reg] & 0x1f)) | (rf[i.a2.reg] >> (32 - (rf[i.a3.reg] & 0x1f)));
 				break;
 			case ROR:
+				// shamt = rf[i.a3.reg] & 0x1f
+				// (X(rs1) >> shamt) | (X(rs1) << (xlen - shamt))
 				rf[i.a1.reg] = (rf[i.a2.reg] >> (rf[i.a3.reg] & 0x1f)) | (rf[i.a2.reg] << (32 - (rf[i.a3.reg] & 0x1f)));
 				break;
       		//*****************
