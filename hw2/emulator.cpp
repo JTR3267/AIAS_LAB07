@@ -50,6 +50,22 @@ typedef enum {
 
 	//instruction added
     //MUL,
+	ANDN,
+	CLMUL,
+	CLMULH,
+	CLMULR,
+	CLZ,
+	CPOP,
+	CTZ,
+	MAX,
+	MAXU,
+	MIN,
+	MINU,
+	ORC_B,
+	ORN,
+	REV8,
+	ROL,
+	ROR,
     //*****************
 
 	ADD,
@@ -95,6 +111,22 @@ typedef enum {
 instr_type parse_instr(char* tok) {
 	//instruction added
     //if ( streq(tok , "mul")) return MUL;
+	if ( streq(tok , "andn")) return ANDN;
+	if ( streq(tok , "clmul")) return CLMUL;
+	if ( streq(tok , "clmulh")) return CLMULH;
+	if ( streq(tok , "clmulr")) return CLMULR;
+	if ( streq(tok , "clz")) return CLZ;
+	if ( streq(tok , "cpop")) return CPOP;
+	if ( streq(tok , "ctz")) return CTZ;
+	if ( streq(tok , "max")) return MAX;
+	if ( streq(tok , "maxu")) return MAXU;
+	if ( streq(tok , "min")) return MIN;
+	if ( streq(tok , "minu")) return MINU;
+	if ( streq(tok , "orc.b")) return ORC_B;
+	if ( streq(tok , "orn")) return ORN;
+	if ( streq(tok , "rev8")) return REV8;
+	if ( streq(tok , "rol")) return ROL;
+	if ( streq(tok , "ror")) return ROR;
     //*****************
 
 	if ( streq(tok, "add") ) return ADD;
@@ -529,6 +561,32 @@ int parse_instr(int line, char* ftok, instr* imem, int memoff, label_loc* labels
 			// 	    i->a2.reg = parse_reg(o2 , line);
 			// 	    i->a3.reg = parse_reg(o3 , line);
 			//     return 1;
+			case ANDN:
+			case CLMUL:
+			case CLMULH:
+			case CLMULR:
+			case MAX:
+			case MAXU:
+			case MIN:
+			case MINU:
+			case ORN:
+			case ROL:
+			case ROR:
+				if ( !o1 || !o2 || !o3 || o4 ) print_syntax_error( line,  "Invalid format" );
+				i->a1.reg = parse_reg(o1 , line);
+				i->a2.reg = parse_reg(o2 , line);
+				i->a3.reg = parse_reg(o3 , line);
+			    return 1;
+			
+			case CLZ:
+			case CPOP:
+			case CTZ:
+			case ORC_B:
+			case REV8:
+				if ( !o1 || !o2 || o3 || o4 ) print_syntax_error( line,  "Invalid format" );
+				i->a1.reg = parse_reg(o1 , line);
+				i->a2.reg = parse_reg(o2 , line);
+			    return 1;
 			//****************
 
 			case JAL:
@@ -766,6 +824,148 @@ void execute(uint8_t* mem, instr* imem, label_loc* labels, int label_count, bool
 
 			//instruction added
       		//case MUL: rf[i.a1.reg] = rf[i.a2.reg] * rf[i.a3.reg]; break;
+			case ANDN:
+				rf[i.a1.reg] = rf[i.a2.reg] & ~rf[i.a3.reg];
+				break;
+			case CLMUL:
+				rf[i.a1.reg] = 0;
+				for (int j = 0; j < 32; j++)
+				{
+					if ((rf[i.a3.reg] >> j) & 1)
+					{
+						rf[i.a1.reg] = rf[i.a1.reg] ^ (rf[i.a2.reg] << j);
+					}
+				}
+				break;
+			case CLMULH:
+				rf[i.a1.reg] = 0;
+				for (int j = 1; j <= 32; j++)
+				{
+					if ((rf[i.a3.reg] >> j) & 1)
+					{
+						rf[i.a1.reg] = rf[i.a1.reg] ^ (rf[i.a2.reg] >> (32 - j));
+					}
+				}
+				break;
+			case CLMULR:
+				rf[i.a1.reg] = 0;
+				for (int j = 0; j < 32; j++)
+				{
+					if ((rf[i.a3.reg] >> j) & 1)
+					{
+						rf[i.a1.reg] = rf[i.a1.reg] ^ (rf[i.a2.reg] >> (32 - j - 1));
+					}
+				}
+				break;
+			case CLZ:
+				rf[i.a1.reg] = 0;
+				for (int j = 31; j >= 0; j--)
+				{
+					if ((rf[i.a2.reg] >> j) & 1)
+					{
+						break;
+					}
+					else
+					{
+						rf[i.a1.reg]++;
+					}
+				}
+				break;
+			case CPOP:
+				rf[i.a1.reg] = 0;
+				for (int j = 0; j < 32; j++)
+				{
+					if ((rf[i.a2.reg] >> j) & 1)
+					{
+						rf[i.a1.reg]++;
+					}
+				}
+				break;
+			case CTZ:
+				rf[i.a1.reg] = 0;
+				for (int j = 0; j < 32; j++)
+				{
+					if ((rf[i.a2.reg] >> j) & 1)
+					{
+						break;
+					}
+					else
+					{
+						rf[i.a1.reg]++;
+					}
+				}
+				break;
+			case MAX:
+				if ((int32_t)rf[i.a2.reg] > (int32_t)rf[i.a3.reg])
+				{
+					rf[i.a1.reg] = rf[i.a2.reg];
+				}
+				else
+				{
+					rf[i.a1.reg] = rf[i.a3.reg];
+				}
+				break;
+			case MAXU:
+				if ((uint32_t)rf[i.a2.reg] > (uint32_t)rf[i.a3.reg])
+				{
+					rf[i.a1.reg] = rf[i.a2.reg];
+				}
+				else
+				{
+					rf[i.a1.reg] = rf[i.a3.reg];
+				}
+				break;
+			case MIN:
+				if ((int32_t)rf[i.a2.reg] < (int32_t)rf[i.a3.reg])
+				{
+					rf[i.a1.reg] = rf[i.a2.reg];
+				}
+				else
+				{
+					rf[i.a1.reg] = rf[i.a3.reg];
+				}
+				break;
+			case MINU:
+				if ((uint32_t)rf[i.a2.reg] < (uint32_t)rf[i.a3.reg])
+				{
+					rf[i.a1.reg] = rf[i.a2.reg];
+				}
+				else
+				{
+					rf[i.a1.reg] = rf[i.a3.reg];
+				}
+				break;
+			case ORC_B:
+				rf[i.a1.reg] = 0;
+				for (int j = 24; j >= 0; j -= 8)
+				{
+					rf[i.a1.reg] = rf[i.a1.reg] << 8;
+					if ((rf[i.a2.reg] >> j) & 0xff)
+					{
+						rf[i.a1.reg] = rf[i.a1.reg] | 0xff;
+					}
+				}
+				break;
+			case ORN:
+				rf[i.a1.reg] = rf[i.a2.reg] | ~rf[i.a3.reg];
+				break;
+			case REV8:
+				rf[i.a1.reg] = 0;
+				for (int j = 24; j >= 0; j -= 8)
+				{
+					for (int k = 0; k < 8; k++)
+					{
+						rf[i.a1.reg] = rf[i.a1.reg] << 1;
+						rf[i.a1.reg] = rf[i.a1.reg] | ((rf[i.a2.reg] >> (j + k)) & 1);
+					}
+				}
+				break;
+			case ROL:
+				rf[i.a1.reg] = (rf[i.a2.reg] << (rf[i.a3.reg] & 0x1f)) | (rf[i.a2.reg] >> (32 - (rf[i.a3.reg] & 0x1f)));
+				break;
+			case ROR:
+				rf[i.a1.reg] = (rf[i.a2.reg] >> (rf[i.a3.reg] & 0x1f)) | (rf[i.a2.reg] << (32 - (rf[i.a3.reg] & 0x1f)));
+				break;
       		//*****************
 
 			case ADD: rf[i.a1.reg] = rf[i.a2.reg] + rf[i.a3.reg]; break;
