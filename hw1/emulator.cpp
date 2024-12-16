@@ -51,6 +51,7 @@ typedef enum {
 	//instruction added
     MUL,
 	MULHU,
+	MULHSU,
 	REM,
 	REMU,
     //*****************
@@ -99,6 +100,7 @@ instr_type parse_instr(char* tok) {
 	//instruction added
     if ( streq(tok , "mul")) return MUL;
 	if ( streq(tok , "mulhu")) return MULHU;
+	if ( streq(tok , "mulhsu")) return MULHSU;
 	if ( streq(tok , "rem")) return REM;
 	if ( streq(tok , "remu")) return REMU;
     //*****************
@@ -531,6 +533,7 @@ int parse_instr(int line, char* ftok, instr* imem, int memoff, label_loc* labels
 			//instruction added
 			case MUL:
 			case MULHU:
+			case MULHSU:
 			case REM:
 			case REMU:
 			    if ( !o1 || !o2 || !o3 || o4 ) print_syntax_error( line,  "Invalid format" );
@@ -780,6 +783,9 @@ void execute(uint8_t* mem, instr* imem, label_loc* labels, int label_count, bool
 			case MULHU:
 				// convert to 64 bits unsigned integer and mutiply, then store the first 32 bits
 				rf[i.a1.reg] = ((uint64_t)rf[i.a2.reg] * (uint64_t)rf[i.a3.reg]) >> 32;
+				break;
+			case MULHSU:
+				rf[i.a1.reg] = ((int64_t)rf[i.a2.reg] * (uint64_t)rf[i.a3.reg]) >> 32;
 				break;
 			case REM:
 				// check division by zero
